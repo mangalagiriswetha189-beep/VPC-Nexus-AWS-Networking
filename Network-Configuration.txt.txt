@@ -1,0 +1,180 @@
+VPC NEXUS – NETWORK CONFIGURATION
+==================================
+
+Project:
+VPC Nexus – AWS Multi-VPC Network Architecture and Connectivity Management System
+
+AWS Region:
+ap-southeast-2 (Sydney)
+
+
+1. VPC CONFIGURATION
+--------------------
+
+VPC 1:
+Name: VPC-Nexus-Primary
+CIDR: 10.0.0.0/16
+VPC ID: vpc-079abb86532f28868
+
+VPC 2:
+Name: VPC-Nexus-Secondary
+CIDR: 10.1.0.0/16
+
+
+2. SUBNET CONFIGURATION
+-----------------------
+
+VPC1 Public Subnet:
+Name: VPC1-Public-Subnet
+CIDR: 10.0.1.0/24
+Availability Zone: ap-southeast-2a
+
+VPC1 Private Subnet:
+Name: VPC1-Private-Subnet
+CIDR: 10.0.2.0/24
+Availability Zone: ap-southeast-2a
+
+VPC2 Private Subnet:
+Name: VPC2-Private-Subnet
+CIDR: 10.1.1.0/24
+Availability Zone: ap-southeast-2a
+
+
+3. INTERNET GATEWAY
+-------------------
+
+Name: VPC1-Internet-Gateway
+Attached VPC: VPC-Nexus-Primary
+Purpose: Internet connectivity for the public subnet
+
+
+4. ROUTE TABLES
+---------------
+
+VPC1 Public Route Table:
+Name: VPC1-Public-RT
+
+Routes:
+10.0.0.0/16 → local
+0.0.0.0/0 → Internet Gateway
+10.1.0.0/16 → VPC Peering
+
+
+VPC1 Private Route Table:
+Name: VPC1-Private-RT
+
+Routes:
+10.0.0.0/16 → local
+10.1.0.0/16 → VPC Peering
+
+
+VPC2 Private Route Table:
+Name: VPC2-Private-RT
+
+Routes:
+10.1.0.0/16 → local
+10.0.0.0/16 → VPC Peering
+
+
+5. VPC PEERING
+--------------
+
+Name: VPC1-VPC2-Peering
+Status: Active
+
+Purpose:
+Provides private connectivity between VPC-Nexus-Primary
+and VPC-Nexus-Secondary.
+
+
+6. EC2 INSTANCES
+----------------
+
+EC2-A:
+Name: VPC1-Public-EC2-A
+Role: Public/Bastion Host
+Private IP: 10.0.1.35
+Public IP: [redacted]
+Subnet: VPC1-Public-Subnet
+OS: Amazon Linux 2023
+
+EC2-B:
+Name: VPC1-Private-EC2-B
+Role: Private EC2
+Private IP: 10.0.2.169
+Subnet: VPC1-Private-Subnet
+Public IPv4: None
+
+EC2-C:
+Name: VPC2-Private-EC2-C
+Role: Private EC2
+Private IP: 10.1.1.202
+Subnet: VPC2-Private-Subnet
+Public IPv4: None
+
+
+7. SECURITY GROUPS
+------------------
+
+VPC1-Public-SG:
+- SSH (22): User public IP
+- HTTP (80): 0.0.0.0/0
+- ICMP: Required project sources
+- Outbound: Allow all
+
+VPC1-Private-SG:
+- SSH (22): 10.0.1.0/24
+- ICMP: 10.0.1.0/24
+- Outbound: Allow all
+
+VPC2-Private-SG:
+- SSH (22): 10.0.0.0/16
+- ICMP: 10.0.0.0/16
+- Outbound: Allow all
+
+
+8. CONNECTIVITY VERIFICATION
+----------------------------
+
+Forward Connectivity:
+VPC1 → VPC2
+Result: SUCCESS
+
+Reverse Connectivity:
+VPC2 → VPC1
+Result: SUCCESS
+
+Private SSH:
+Bastion Host → VPC2 Private EC2
+Result: SUCCESS
+
+SSH Port Verification:
+10.1.1.202:22
+Result: PORT 22 OPEN
+
+
+9. CONTROLLED FAILURE TEST
+--------------------------
+
+ICMP access was temporarily removed from the required
+security group.
+
+Result:
+Ping failed while VPC peering and routing remained active.
+
+After restoring the ICMP rule:
+Ping connectivity was successfully restored.
+
+Conclusion:
+Routing establishes the network path, while Security Groups
+control whether traffic is permitted.
+
+
+10. SECURITY NOTE
+-----------------
+
+Private EC2 instances do not have public IPv4 addresses.
+
+AWS credentials, private keys, passwords, access tokens,
+and other sensitive information must NOT be stored in this
+repository.
